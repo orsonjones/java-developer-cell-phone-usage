@@ -7,6 +7,7 @@ import java.time.LocalDate;
 @AutoValue
 public abstract class ReportData {
     public static ReportData create(
+            Integer reportYear,
             LocalDate reportDate,
             Integer phones,
             Integer totalMinutes,
@@ -15,10 +16,11 @@ public abstract class ReportData {
             Float averageData,
             ImmutableList<Details> details)
     {
-        return new AutoValue_ReportData(reportDate, phones, totalMinutes, totalData, averageMinutes, averageData, details);
+        return new AutoValue_ReportData(reportYear, reportDate, phones, totalMinutes, totalData, averageMinutes, averageData, details);
     }
     
     //header
+    public abstract Integer reportYear();
     public abstract LocalDate reportDate();
     public abstract Integer phones();
     public abstract Integer totalMinutes();

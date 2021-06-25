@@ -73,7 +73,9 @@ class ReportPrinter implements Printable {
     }
 
     private void printHeader() {
-        printLine("Date: " + reportData.reportDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        printCell("Generated: " + reportData.reportDate().format(DateTimeFormatter.ISO_LOCAL_DATE), 0, 2);
+        printCell("For year: " + reportData.reportYear(), 1, 2);
+        printLine();
         printLine("Phones: " + reportData.phones());
         printLine("Total Minutes: " + reportData.totalMinutes());
         printLine("Total Data: " + String.format("%1.1f", reportData.totalData()));

@@ -56,7 +56,7 @@ public class ReportGenerator {
                 .map(id -> generateDetails(employeeIdPhoneMap.get(id), employeeMonthData.get(id), employeeMonthMinutes.get(id)))
                 .forEach(detailsBuilder::add);
         
-        return ReportData.create(reportDate, phones, totalMinutes, totalData, averageMinutes, averageData, detailsBuilder.build());
+        return ReportData.create(year, reportDate, phones, totalMinutes, totalData, averageMinutes, averageData, detailsBuilder.build());
     }
 
     private static Details generateDetails(CellPhone cellPhone, Map<Month, Float> monthData, Map<Month, Integer> monthMinutes) {
