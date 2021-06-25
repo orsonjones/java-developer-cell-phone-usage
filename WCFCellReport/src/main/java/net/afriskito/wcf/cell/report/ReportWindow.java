@@ -1,12 +1,9 @@
 package net.afriskito.wcf.cell.report;
 
-import java.awt.Point;
+import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.print.Doc;
 import javax.print.DocFlavor;
 import javax.print.DocPrintJob;
@@ -22,9 +19,11 @@ import javax.print.event.PrintJobEvent;
 import javax.print.event.PrintJobListener;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import net.afriskito.wcf.cell.report.beans.CellPhone;
 import net.afriskito.wcf.cell.report.beans.CellUsage;
 import net.afriskito.wcf.cell.report.beans.CsvLoader;
+import net.afriskito.wcf.cell.report.beans.ReportData;
 
 public class ReportWindow extends javax.swing.JFrame implements PrintJobListener {
     JFileChooser fileChooser = new JFileChooser();
@@ -32,6 +31,8 @@ public class ReportWindow extends javax.swing.JFrame implements PrintJobListener
     File dataFile = null;
     DefaultComboBoxModel<String> yearModel = new DefaultComboBoxModel();
     Integer selectedYear = null;
+    ImmutableList<CellPhone> cellPhones = null;
+    ImmutableList<CellUsage> cellUsage = null;
     
     public ReportWindow() {
         initComponents();
@@ -153,10 +154,10 @@ public class ReportWindow extends javax.swing.JFrame implements PrintJobListener
             try {
                 txtEmployees.setText("");
                 employeeFile = fileChooser.getSelectedFile();
-                List<CellPhone> cellPhones = CsvLoader.loadEmployeePhones(employeeFile);
+                cellPhones = CsvLoader.loadEmployeePhones(employeeFile);
                 txtEmployees.setText(employeeFile.getAbsolutePath());
             } catch (CsvLoader.LoaderException ex) {
-                Logger.getLogger(ReportWindow.class.getName()).log(Level.WARNING, null, ex);
+                notify("error while loading employee file: " + ex.getLocalizedMessage());
             }
         }
     }//GEN-LAST:event_btnEmployeesActionPerformed
@@ -167,14 +168,15 @@ public class ReportWindow extends javax.swing.JFrame implements PrintJobListener
             try {
                 txtData.setText("");
                 dataFile = fileChooser.getSelectedFile();
-                List<CellUsage> cellUsage = CsvLoader.loadPhoneData(dataFile);
+                cellUsage = CsvLoader.loadPhoneData(dataFile);
+                
                 yearModel.removeAllElements();
                 Set<String> years = new HashSet<>();
                 cellUsage.forEach(row -> years.add(Integer.toString(row.date().getYear())));
                 yearModel.addAll(years);
                 txtData.setText(dataFile.getAbsolutePath());
             } catch (CsvLoader.LoaderException ex) {
-                Logger.getLogger(ReportWindow.class.getName()).log(Level.WARNING, null, ex);
+                notify("error while loading data: " + ex.getLocalizedMessage());
             }
         }
     }//GEN-LAST:event_btnDataActionPerformed
@@ -189,17 +191,17 @@ public class ReportWindow extends javax.swing.JFrame implements PrintJobListener
             return;
         DocPrintJob printJob = selectedPrintService.createPrintJob();
         printJob.addPrintJobListener(this);
-        final String printData = selectedPrintService.getName() + " " + selectedYear;
-        ReportPrinter reportPrinter = new ReportPrinter(printData);
+        System.out.println(selectedPrintService.getName() + " " + selectedYear);
+        ReportData reportData = ReportGenerator.generate(cellPhones, cellUsage, selectedYear);
+        ReportPrinter reportPrinter = new ReportPrinter(reportData);
         Doc doc = new SimpleDoc(reportPrinter, docFlavor, null);
         PrintRequestAttributeSet printRequestAttributeSet = new HashPrintRequestAttributeSet();
         printRequestAttributeSet.add(new Copies(1));
         try {
             printJob.print(doc, printRequestAttributeSet);
         } catch (PrintException ex) {
-            
+            notify("error while printing report: " + ex.getLocalizedMessage());
         }
-        System.out.println(printData);
     }//GEN-LAST:event_btnPrintActionPerformed
 
     private void cmbYearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbYearActionPerformed
@@ -257,33 +259,33 @@ public class ReportWindow extends javax.swing.JFrame implements PrintJobListener
     private javax.swing.JTextField txtEmployees;
     // End of variables declaration//GEN-END:variables
 
+    private void notify(String message) {
+        JOptionPane.showMessageDialog(this, message, "Report Generator", JOptionPane.INFORMATION_MESSAGE);
+    }
+    
     @Override
     public void printDataTransferCompleted(PrintJobEvent arg0) {
-        System.out.println("printDataTransferCompleted");
     }
 
     @Override
     public void printJobCompleted(PrintJobEvent arg0) {
-        System.out.println("printJobCompleted");
     }
 
     @Override
     public void printJobFailed(PrintJobEvent arg0) {
-        System.out.println("printJobFailed");
+        notify("Print job failed");
     }
 
     @Override
     public void printJobCanceled(PrintJobEvent arg0) {
-        System.out.println("printJobCanceled");
+        notify("print job canceled");
     }
 
     @Override
     public void printJobNoMoreEvents(PrintJobEvent arg0) {
-        System.out.println("printJobNoMoreEvents");
     }
 
     @Override
     public void printJobRequiresAttention(PrintJobEvent arg0) {
-        System.out.println("printJobRequiresAttention");
     }
 }

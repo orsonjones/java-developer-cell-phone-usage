@@ -1,39 +1,41 @@
 package net.afriskito.wcf.cell.report.beans;
 
+import com.google.common.collect.ImmutableList;
 import com.opencsv.bean.CsvToBeanBuilder;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class CsvLoader {
-    public static List<CellPhone> loadEmployeePhones(File file) throws LoaderException {
+    public static ImmutableList<CellPhone> loadEmployeePhones(File file) throws LoaderException {
         try {
-            List<CellPhone> cellPhones = (List) new CsvToBeanBuilder(new FileReader(file))
+            ImmutableList.Builder<CellPhone> builder = ImmutableList.builder();
+            new CsvToBeanBuilder(new FileReader(file))
                     .withType(CellPhoneBean.class)
-                    .build().<CellPhoneBean>parse()
+                    .build()
+                    .<CellPhoneBean>parse()
                     .stream()
                     .map(bean -> CellPhone.create((CellPhoneBean) bean))
-                    .collect(Collectors.toCollection(ArrayList::new));
-            return cellPhones;
-        } catch (FileNotFoundException ex) {
+                    .forEachOrdered(entry -> builder.add((CellPhone) entry));
+            return builder.build();
+        } catch (FileNotFoundException | NullPointerException ex) {
             throw new LoaderException("Error loading employee phones", ex);
         }
     }
     
-    public static List<CellUsage> loadPhoneData(File file) throws LoaderException {
+    public static ImmutableList<CellUsage> loadPhoneData(File file) throws LoaderException {
         try {
-            List<CellUsage> cellPhones = (List) new CsvToBeanBuilder(new FileReader(file))
+            ImmutableList.Builder<CellUsage> builder = ImmutableList.builder();
+            new CsvToBeanBuilder(new FileReader(file))
                     .withType(CellUsageBean.class)
-                    .build().<CellUsageBean>parse()
+                    .build()
+                    .<CellUsageBean>parse()
                     .stream()
                     .map(bean -> CellUsage.create((CellUsageBean) bean))
-                    .collect(Collectors.toCollection(ArrayList::new));
-            return cellPhones;
-        } catch (FileNotFoundException ex) {
-            throw new LoaderException("Error loading employee phones", ex);
+                    .forEachOrdered(entry -> builder.add((CellUsage) entry));
+            return builder.build();
+        } catch (FileNotFoundException | NullPointerException ex) {
+            throw new LoaderException("Error loading phone data", ex);
         }
     }
     
