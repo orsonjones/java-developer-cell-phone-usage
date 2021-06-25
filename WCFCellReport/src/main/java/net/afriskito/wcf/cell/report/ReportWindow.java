@@ -1,24 +1,32 @@
 package net.afriskito.wcf.cell.report;
 
-import com.opencsv.bean.CsvToBeanBuilder;
+import java.awt.Point;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
+import javax.print.Doc;
+import javax.print.DocFlavor;
+import javax.print.DocPrintJob;
+import javax.print.PrintException;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.print.ServiceUI;
+import javax.print.SimpleDoc;
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.Copies;
+import javax.print.event.PrintJobEvent;
+import javax.print.event.PrintJobListener;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JFileChooser;
 import net.afriskito.wcf.cell.report.beans.CellPhone;
-import net.afriskito.wcf.cell.report.beans.CellPhoneBean;
 import net.afriskito.wcf.cell.report.beans.CellUsage;
-import net.afriskito.wcf.cell.report.beans.CellUsageBean;
+import net.afriskito.wcf.cell.report.beans.CsvLoader;
 
-public class ReportWindow extends javax.swing.JFrame {
+public class ReportWindow extends javax.swing.JFrame implements PrintJobListener {
     JFileChooser fileChooser = new JFileChooser();
     File employeeFile = null;
     File dataFile = null;
@@ -143,15 +151,11 @@ public class ReportWindow extends javax.swing.JFrame {
         int result = fileChooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             try {
+                txtEmployees.setText("");
                 employeeFile = fileChooser.getSelectedFile();
+                List<CellPhone> cellPhones = CsvLoader.loadEmployeePhones(employeeFile);
                 txtEmployees.setText(employeeFile.getAbsolutePath());
-                List<CellPhone> cellPhones = (List) new CsvToBeanBuilder(new FileReader(employeeFile))
-                        .withType(CellPhoneBean.class)
-                        .build().<CellPhoneBean>parse()
-                        .stream()
-                        .map(bean -> CellPhone.create((CellPhoneBean) bean))
-                        .collect(Collectors.toCollection(ArrayList::new));
-            } catch (FileNotFoundException ex) {
+            } catch (CsvLoader.LoaderException ex) {
                 Logger.getLogger(ReportWindow.class.getName()).log(Level.WARNING, null, ex);
             }
         }
@@ -161,26 +165,41 @@ public class ReportWindow extends javax.swing.JFrame {
         int result = fileChooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             try {
+                txtData.setText("");
                 dataFile = fileChooser.getSelectedFile();
-                txtData.setText(dataFile.getAbsolutePath());
-                List<CellUsage> cellUsage = (List) new CsvToBeanBuilder(new FileReader(dataFile))
-                        .withType(CellUsageBean.class)
-                        .build().<CellUsageBean>parse()
-                        .stream()
-                        .map(bean -> CellUsage.create((CellUsageBean) bean))
-                        .collect(Collectors.toCollection(ArrayList::new));
+                List<CellUsage> cellUsage = CsvLoader.loadPhoneData(dataFile);
                 yearModel.removeAllElements();
                 Set<String> years = new HashSet<>();
                 cellUsage.forEach(row -> years.add(Integer.toString(row.date().getYear())));
                 yearModel.addAll(years);
-            } catch (FileNotFoundException ex) {
+                txtData.setText(dataFile.getAbsolutePath());
+            } catch (CsvLoader.LoaderException ex) {
                 Logger.getLogger(ReportWindow.class.getName()).log(Level.WARNING, null, ex);
             }
         }
     }//GEN-LAST:event_btnDataActionPerformed
 
     private void btnPrintActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPrintActionPerformed
-        System.out.println(selectedYear);
+        PrintService[] printServices = PrintServiceLookup.lookupPrintServices(null, null);
+        PrintService defaultPrintService = PrintServiceLookup.lookupDefaultPrintService();
+        PrintRequestAttributeSet attributeSet = new HashPrintRequestAttributeSet();
+        final DocFlavor.SERVICE_FORMATTED docFlavor = DocFlavor.SERVICE_FORMATTED.PRINTABLE;
+        PrintService selectedPrintService = ServiceUI.printDialog(null, 0, 0, printServices, defaultPrintService, docFlavor, attributeSet);
+        if (selectedPrintService == null)
+            return;
+        DocPrintJob printJob = selectedPrintService.createPrintJob();
+        printJob.addPrintJobListener(this);
+        final String printData = selectedPrintService.getName() + " " + selectedYear;
+        ReportPrinter reportPrinter = new ReportPrinter(printData);
+        Doc doc = new SimpleDoc(reportPrinter, docFlavor, null);
+        PrintRequestAttributeSet printRequestAttributeSet = new HashPrintRequestAttributeSet();
+        printRequestAttributeSet.add(new Copies(1));
+        try {
+            printJob.print(doc, printRequestAttributeSet);
+        } catch (PrintException ex) {
+            
+        }
+        System.out.println(printData);
     }//GEN-LAST:event_btnPrintActionPerformed
 
     private void cmbYearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbYearActionPerformed
@@ -237,4 +256,34 @@ public class ReportWindow extends javax.swing.JFrame {
     private javax.swing.JTextField txtData;
     private javax.swing.JTextField txtEmployees;
     // End of variables declaration//GEN-END:variables
+
+    @Override
+    public void printDataTransferCompleted(PrintJobEvent arg0) {
+        System.out.println("printDataTransferCompleted");
+    }
+
+    @Override
+    public void printJobCompleted(PrintJobEvent arg0) {
+        System.out.println("printJobCompleted");
+    }
+
+    @Override
+    public void printJobFailed(PrintJobEvent arg0) {
+        System.out.println("printJobFailed");
+    }
+
+    @Override
+    public void printJobCanceled(PrintJobEvent arg0) {
+        System.out.println("printJobCanceled");
+    }
+
+    @Override
+    public void printJobNoMoreEvents(PrintJobEvent arg0) {
+        System.out.println("printJobNoMoreEvents");
+    }
+
+    @Override
+    public void printJobRequiresAttention(PrintJobEvent arg0) {
+        System.out.println("printJobRequiresAttention");
+    }
 }
