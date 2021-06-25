@@ -195,10 +195,8 @@ public class ReportWindow extends javax.swing.JFrame implements PrintJobListener
         ReportData reportData = ReportGenerator.generate(cellPhones, cellUsage, selectedYear);
         ReportPrinter reportPrinter = new ReportPrinter(reportData);
         Doc doc = new SimpleDoc(reportPrinter, docFlavor, null);
-        PrintRequestAttributeSet printRequestAttributeSet = new HashPrintRequestAttributeSet();
-        printRequestAttributeSet.add(new Copies(1));
         try {
-            printJob.print(doc, printRequestAttributeSet);
+            printJob.print(doc, attributeSet);
         } catch (PrintException ex) {
             notify("error while printing report: " + ex.getLocalizedMessage());
         }

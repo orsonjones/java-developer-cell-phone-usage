@@ -8,12 +8,12 @@ public abstract class Details {
     public static Details create(
             CellPhone cellPhone,
             ImmutableList<Integer> monthlyMinutes,
-            ImmutableList<Double> monthlyData)
+            ImmutableList<Float> monthlyData)
     {
         return new AutoValue_Details(cellPhone, monthlyMinutes, monthlyData);
     }
     
     public abstract CellPhone cellPhone();
     public abstract ImmutableList<Integer> monthlyMinutes();
-    public abstract ImmutableList<Double> monthlyData();
+    public abstract ImmutableList<Float> monthlyData();
 }
