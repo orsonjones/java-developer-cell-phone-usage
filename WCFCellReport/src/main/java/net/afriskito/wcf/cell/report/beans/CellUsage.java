@@ -9,8 +9,8 @@ public abstract class CellUsage {
         return new AutoValue_CellUsage(bean.employeeId, bean.date, bean.minutes, bean.data);
     }
     
-    abstract Integer employeeId();
-    abstract LocalDate date();
-    abstract Integer minutes();
-    abstract Float data();
+    public abstract Integer employeeId();
+    public abstract LocalDate date();
+    public abstract Integer minutes();
+    public abstract Float data();
 }

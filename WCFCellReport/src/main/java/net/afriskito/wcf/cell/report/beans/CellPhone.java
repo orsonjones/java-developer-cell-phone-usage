@@ -9,8 +9,8 @@ public abstract class CellPhone {
         return new AutoValue_CellPhone(bean.employeeId, bean.employeeName, bean.purchaseDate, bean.model);
     }
     
-    abstract Integer employeeId();
-    abstract String employeeName();
-    abstract LocalDate purchaseDate();
-    abstract String model();
+    public abstract Integer employeeId();
+    public abstract String employeeName();
+    public abstract LocalDate purchaseDate();
+    public abstract String model();
 }
